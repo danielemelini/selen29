@@ -60,7 +60,7 @@
  INTEGER :: npix, na
  CHARACTER*22, PARAMETER :: FILES='shs.bin', FILEU='shu.bin', & 
  			    FILEN='shn.bin', FILEZ='shz.bin', & 
-			    FILEV='shv.bin'
+			    FILEV='shv.bin', FILEG='shg.bin'
  CHARACTER*12 HEADER 
  INTEGER I, J, K, L, P, IS, LJ, MJ, LI, DOM, IND
 ! INTEGER LL(JMAX), MM(JMAX), DM(JMAX), ANC(NP), WET(NP) 
@@ -90,8 +90,9 @@
  COMPLEX*16, ALLOCATABLE :: AAAA(:,:), AAAA_MOD(:,:)
  COMPLEX*16, ALLOCATABLE :: BBBB(:,:), BBBB_MOD(:,:) 
  COMPLEX*16, ALLOCATABLE :: HHHH(:,:), KKKK(:,:) 
- COMPLEX*16, ALLOCATABLE :: S(:,:), N(:,:), U(:,:), V(:,:)
+ COMPLEX*16, ALLOCATABLE :: S(:,:), N(:,:), U(:,:), V(:,:), G(:,:)
  COMPLEX*16, ALLOCATABLE :: Z(:,:,:)
+ REAL*8, ALLOCATABLE :: C_CONST(:)
  REAL*8 RHOE, RHOI_O_RHOE_X3, RHOW_O_RHOE_X3, RHOI_O_RHOW 
 !
 !
@@ -118,7 +119,8 @@
  ALLOCATE( BBBB(JMAX,0:NN), BBBB_MOD(JMAX,0:NN) )
  ALLOCATE( HHHH(JMAX,0:NN), KKKK(JMAX,0:NN) )
  ALLOCATE( Z(JMAX,0:NN,0:SMAX) )
- ALLOCATE( S(JMAX,0:NN), N(JMAX,0:NN), U(JMAX,0:NN), V(JMAX,0:NN) )
+ ALLOCATE( S(JMAX,0:NN), N(JMAX,0:NN), U(JMAX,0:NN), V(JMAX,0:NN), G(JMAX,0:NN) )
+ ALLOCATE( C_CONST(0:NN) )
  ALLOCATE( BETAS(0:LMAX,0:NN), ES(0:LMAX) )
  ALLOCATE( BETAU(0:LMAX,0:NN), EU(0:LMAX) )
  ALLOCATE( BETAN(0:LMAX,0:NN), EN(0:LMAX) )
@@ -462,7 +464,7 @@
 	U(:,:) = aaaa(:,:) + bbbb(:,:)
 
 !
-! --- Array "B" for Geoid heigth   
+! --- Array "B" for Gravity potential   
 	bbbb(:,:)=0.
  	do j=1, jmax 
 		do k=0,NN
@@ -488,11 +490,21 @@
  		enddo
 	enddo
 !
-! --- Geoid undulations 
-	N(:,:) = aaaa(:,:) + bbbb(:,:)
+! --- Geoid potential (loading)
+! 
+	G(:,:) = aaaa(:,:) + bbbb(:,:)
+!
+! --- "c constant" (total) 
+    C_CONST(:) =  SE(1,:) - (AAVV(:) + BBVV(:)) 
+!
+! --- Sea surface variation (total) 
+	N(:,:) = G(:,:)
+	N(1,:) = N(1,:) + C_CONST(:)
+!
+
 !
 ! --- Adding a constant to geoid undulations 
-	N(1,:) = N(1,:) +  SE(1,:) - AAVV(:) - BBVV(:)  
+!	N(1,:) = N(1,:) +  SE(1,:) - AAVV(:) - BBVV(:)  
 !
 ! --- Geoid undulations (previous formulation) 
 !       N(:,:) = S(:,:) + U(:,:)
@@ -545,6 +557,10 @@
  	open(3,file=filen,status='unknown',form='unformatted') 
         write(3) N ; close(3) 
 !
+! --- Writing SH coefficients of geoid undulations, N    
+ 	open(3,file=fileg,status='unknown',form='unformatted') 
+        write(3) G ; close(3) 
+!
 ! --- Writing SH coefficients of 'reduced' sea level change, Z=OS 
  	open(3,file=filez,status='unknown',form='unformatted') 
         write(3) Z ; close(3)
@@ -571,7 +587,8 @@
  DEALLOCATE( BBBB, BBBB_MOD )
  DEALLOCATE( HHHH, KKKK )
  DEALLOCATE( Z )
- DEALLOCATE( S, N, U, V )
+ DEALLOCATE( S, N, U, V, G )
+ DEALLOCATE( C_CONST )
  DEALLOCATE( BETAS, ES )
  DEALLOCATE( BETAU, EU )
  DEALLOCATE( BETAN, EN )

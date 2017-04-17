@@ -492,11 +492,11 @@
  Integer, parameter  :: i4b   = selected_int_kind(9)
  Integer, parameter  :: sp    = kind(1.0)
  Integer, parameter  :: dp    = kind(1.0d0)
-#ifdef GNU
- Integer, parameter  :: qp    = 10
-#else
+!#ifdef GNU
+! Integer, parameter  :: qp    = 10
+!#else
  Integer, parameter  :: qp    = kind(1.0q0)
-#endif
+!#endif
  Real(qp), parameter :: pi    = 3.141592653589793238462643383279502884197_qp
  END MODULE STRATA 
 !
@@ -3192,15 +3192,39 @@ ENDIF   ! Endif on NV=2
 ! NV=3  CODE=6 ---> Paulson, Zhong, and Wahr (2008) 
 ! NV=3, CODE=7 ---> 3 -layers discretization of peltier's VM2
 !
+! NEW -- Feb 06, 2017
+! NV=3  CODE=8 ---> Model "M3-L70-V01" reference model for the "Test suite" - 2009
 !
-If( (CODE<0 .or. CODE>7) .and. iv==0) Then
+!
+If( (CODE<0 .or. CODE>8) .and. iv==0) Then
 Write(99,*)'ERROR in Sbr SPEC: The CODE is not available'
 Write(99,*)'**** JOB ABORTED ***************************';stop
 Endif
-If( (CODE<0 .or. CODE>7) .and. iv==1) Then
+If( (CODE<0 .or. CODE>8) .and. iv==1) Then
 Write(*,*) 'ERROR in Sbr SPEC: The CODE is not available'
 Write(*,*) '**** JOB ABORTED ***************************';Stop
 Endif
+!
+!
+!
+!
+! NEW NEW NEW NEW NEW
+!
+if(CODE == 8) then   ! Test suite model M3-L70-V01 
+!
+nroots=4*nv
+!
+r (0)      = 3480._qp; rho(0)=10750._qp; rmu(0)=0._qp          ! Core 
+r (1)      = 5701._qp; rho(1)=4978._qp ; rmu(1)=2.28340_qp     ! Lower mantle
+r (2)      = 5951._qp; rho(2)=3871._qp ; rmu(2)=1.05490_qp     ! TZ  
+r (3)      = 6301._qp; rho(3)=3438._qp ; rmu(3)=0.70363_qp     ! Upper mantle
+r (4)      = 6371._qp; rho(4)=3037._qp ; rmu(4)=0.50605_qp     ! Litosphere
+!
+endif 
+!
+!
+!
+!
 !
 !
 !
